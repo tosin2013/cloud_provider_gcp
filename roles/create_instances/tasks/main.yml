@@ -26,25 +26,14 @@
       ansible_group: "{{ item.ansible_group | default(item.name) }}"
     metadata:
       enable-oslogin: "FALSE"
+      ssh-keys: "{{ gcp_ssh_key_user | default('gcp-user') }}:{{ gcp_ssh_public_key | default('') }}"
     state: present
   loop: "{{ instances }}"
   loop_control:
     label: "{{ item.name }}"
   register: r_gcp_instances
-  async: 600
-  poll: 0
-
-- name: Wait for GCE instance creation
-  ansible.builtin.async_status:
-    jid: "{{ item.ansible_job_id }}"
-  loop: "{{ r_gcp_instances.results }}"
-  loop_control:
-    label: "{{ item.item.name }}"
-  register: r_gcp_instances_wait
-  until: r_gcp_instances_wait.finished
-  retries: 60
-  delay: 10
 
 - name: Set instances fact
   ansible.builtin.set_fact:
-    gcp_created_instances: "{{ r_gcp_instances_wait.results | map(attribute='instance') | list }}"
+    gcp_created_instances: "{{ r_gcp_instances.results | map(attribute='instance') | list }}"
+  when: r_gcp_instances.results | default([]) | length > 0
