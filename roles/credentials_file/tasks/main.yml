@@ -13,6 +13,12 @@
     mode: "0600"
   register: r_gcp_credentials
 
+- name: Create svc-acct-creds.json for host_ocp4_provisioner compatibility
+  ansible.builtin.copy:
+    src: "{{ gcp_credentials_file }}"
+    dest: "{{ output_dir }}/svc-acct-creds.json"
+    mode: "0600"
+
 - name: Set GCP credentials path fact
   ansible.builtin.set_fact:
     gcp_credentials_output: "{{ output_dir }}/gcp_credentials.json"
