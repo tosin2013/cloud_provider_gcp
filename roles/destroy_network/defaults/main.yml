@@ -1,0 +1,5 @@
+---
+gcp_destroy_network_name: "{{ project_tag }}-network"
+gcp_destroy_subnet_name: "{{ project_tag }}-subnet"
+gcp_destroy_router_name: "{{ project_tag }}-router"
+gcp_destroy_nat_name: "{{ project_tag }}-nat"

@@ -1,0 +1,3 @@
+---
+gcp_credentials_file: ""
+gcp_auth_type: serviceaccount

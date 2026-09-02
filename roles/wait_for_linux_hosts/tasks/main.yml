@@ -1,0 +1,10 @@
+---
+- name: Wait for SSH on all Linux hosts
+  ansible.builtin.wait_for_connection:
+    timeout: "{{ gcp_wait_for_ssh_timeout }}"
+    delay: "{{ gcp_wait_for_ssh_delay }}"
+
+- name: Gather facts after connection
+  ansible.builtin.setup:
+    gather_subset:
+      - min

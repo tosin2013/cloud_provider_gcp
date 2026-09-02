@@ -1,0 +1,4 @@
+---
+gcp_open_environment_user_bindings:
+  - role: roles/editor
+  - role: roles/iam.serviceAccountUser

@@ -1,0 +1,33 @@
+---
+- name: Check if gcloud is already installed
+  ansible.builtin.command:
+    cmd: command -v gcloud
+  register: r_gcloud_check
+  failed_when: false
+  changed_when: false
+  check_mode: false
+
+- name: Install Google Cloud SDK
+  when: r_gcloud_check.rc != 0
+  block:
+    - name: Add Google Cloud SDK repo (RHEL/CentOS)
+      ansible.builtin.yum_repository:
+        name: google-cloud-cli
+        description: Google Cloud CLI
+        baseurl: https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64
+        gpgcheck: true
+        gpgkey: https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+        enabled: true
+      when: ansible_os_family == "RedHat"
+
+    - name: Install gcloud CLI package (RHEL/CentOS)
+      ansible.builtin.dnf:
+        name: google-cloud-cli
+        state: present
+      when: ansible_os_family == "RedHat"
+
+- name: Verify gcloud is available
+  ansible.builtin.command:
+    cmd: gcloud version
+  changed_when: false
+  check_mode: false

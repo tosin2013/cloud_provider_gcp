@@ -1,0 +1,2 @@
+---
+gcp_destroy_async_timeout: 600

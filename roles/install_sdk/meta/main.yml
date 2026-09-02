@@ -1,0 +1,8 @@
+---
+galaxy_info:
+  role_name: install_sdk
+  description: Install Google Cloud SDK (gcloud CLI) on the bastion host
+  author: tosin2013
+  license: Apache-2.0
+  min_ansible_version: "2.15"
+dependencies: []

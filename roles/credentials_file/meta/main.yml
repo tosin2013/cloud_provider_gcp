@@ -1,0 +1,8 @@
+---
+galaxy_info:
+  role_name: credentials_file
+  description: Write GCP service account JSON credentials to the output directory
+  author: tosin2013
+  license: Apache-2.0
+  min_ansible_version: "2.15"
+dependencies: []

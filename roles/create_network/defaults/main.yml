@@ -1,0 +1,23 @@
+---
+gcp_network_name: "{{ project_tag }}-network"
+gcp_subnet_name: "{{ project_tag }}-subnet"
+gcp_subnet_cidr: "10.0.0.0/16"
+gcp_router_name: "{{ project_tag }}-router"
+gcp_nat_name: "{{ project_tag }}-nat"
+
+gcp_firewall_rules:
+  - name: "{{ project_tag }}-allow-internal"
+    direction: INGRESS
+    allowed:
+      - ip_protocol: tcp
+        ports: ["0-65535"]
+      - ip_protocol: udp
+        ports: ["0-65535"]
+      - ip_protocol: icmp
+    source_ranges: ["10.0.0.0/16"]
+  - name: "{{ project_tag }}-allow-ssh"
+    direction: INGRESS
+    allowed:
+      - ip_protocol: tcp
+        ports: ["22"]
+    source_ranges: ["0.0.0.0/0"]

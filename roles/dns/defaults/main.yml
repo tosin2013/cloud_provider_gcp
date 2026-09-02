@@ -1,0 +1,3 @@
+---
+gcp_dns_zone_name: ""
+gcp_dns_ttl: 300

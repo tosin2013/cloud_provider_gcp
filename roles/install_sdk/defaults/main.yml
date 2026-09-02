@@ -1,0 +1,3 @@
+---
+gcp_sdk_version: latest
+gcp_sdk_install_dir: /usr/local

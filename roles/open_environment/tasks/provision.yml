@@ -1,0 +1,12 @@
+---
+- name: Grant IAM bindings to requester
+  google.cloud.gcp_resourcemanager_project_iam_member:
+    project: "projects/{{ gcp_project_id }}"
+    role: "{{ item.role }}"
+    member: "user:{{ requester_email }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+  loop: "{{ gcp_open_environment_user_bindings }}"
+  loop_control:
+    label: "{{ item.role }}"
+  when: requester_email is defined

@@ -1,0 +1,2 @@
+---
+gcp_ssh_key_user: "{{ ansible_user | default('ec2-user') }}"

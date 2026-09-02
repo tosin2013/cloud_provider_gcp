@@ -1,0 +1,39 @@
+---
+- name: Fetch GCE instances for this GUID
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute instances list
+      --project={{ gcp_project_id }}
+      --filter="labels.guid={{ guid }}"
+      --format=json
+  register: r_gcp_instance_list
+  changed_when: false
+
+- name: Parse instance list
+  ansible.builtin.set_fact:
+    _gcp_instances: "{{ r_gcp_instance_list.stdout | from_json }}"
+
+- name: Add hosts to inventory
+  ansible.builtin.add_host:
+    name: "{{ item.name }}"
+    groups: "{{ item.labels.ansible_group | default('ungrouped') }}"
+    ansible_host: >-
+      {{ gcp_inventory_use_private_ip | bool
+         | ternary(
+             item.networkInterfaces[0].networkIP,
+             item.networkInterfaces[0].accessConfigs[0].natIP | default(item.networkInterfaces[0].networkIP)
+           ) }}
+    public_dns_name: "{{ item.networkInterfaces[0].accessConfigs[0].natIP | default('') }}"
+    private_ip_address: "{{ item.networkInterfaces[0].networkIP }}"
+    gcp_zone: "{{ item.zone | regex_replace('.*/zones/', '') }}"
+    gcp_machine_type: "{{ item.machineType | regex_replace('.*/machineTypes/', '') }}"
+    gcp_status: "{{ item.status }}"
+  loop: "{{ _gcp_instances }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Set region final fact
+  ansible.builtin.set_fact:
+    gcp_region_final: >-
+      {{ _gcp_instances[0].zone | regex_replace('.*/zones/(.*)-[a-z]$', '\1') }}
+  when: _gcp_instances | length > 0

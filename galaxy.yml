@@ -1,0 +1,22 @@
+---
+namespace: agnosticd
+name: cloud_provider_gcp
+version: 0.1.0
+readme: README.md
+description: Cloud Provider Collection for GCP for AgnosticD V2
+authors:
+  - tosin2013
+repository: https://github.com/tosin2013/cloud_provider_gcp
+license:
+  - Apache-2.0
+tags:
+  - gcp
+  - google
+  - openshift
+  - agnosticd
+  - cloud
+dependencies:
+  google.cloud: ">=1.0.0"
+build_ignore:
+  - .git
+  - .gitignore

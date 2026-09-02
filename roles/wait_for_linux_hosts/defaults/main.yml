@@ -1,0 +1,3 @@
+---
+gcp_wait_for_ssh_timeout: 300
+gcp_wait_for_ssh_delay: 10

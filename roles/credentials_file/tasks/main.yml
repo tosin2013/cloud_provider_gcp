@@ -1,0 +1,27 @@
+---
+- name: Validate GCP credentials file is defined
+  ansible.builtin.assert:
+    that:
+      - gcp_credentials_file | default('') | length > 0
+    fail_msg: >-
+      gcp_credentials_file must be set to the path of the GCP service account JSON key.
+
+- name: Copy GCP credentials to output directory
+  ansible.builtin.copy:
+    src: "{{ gcp_credentials_file }}"
+    dest: "{{ output_dir }}/gcp_credentials.json"
+    mode: "0600"
+  register: r_gcp_credentials
+
+- name: Set GCP credentials path fact
+  ansible.builtin.set_fact:
+    gcp_credentials_output: "{{ output_dir }}/gcp_credentials.json"
+
+- name: Activate service account with gcloud
+  ansible.builtin.command:
+    cmd: >-
+      gcloud auth activate-service-account
+      --key-file={{ gcp_credentials_output }}
+      --project={{ gcp_project_id }}
+  changed_when: true
+  when: gcp_auth_type == "serviceaccount"

@@ -1,0 +1,61 @@
+---
+- name: List firewall rules for this network
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute firewall-rules list
+      --project={{ gcp_project_id }}
+      --filter="network={{ gcp_destroy_network_name }}"
+      --format="value(name)"
+  register: r_gcp_firewall_list
+  changed_when: false
+  failed_when: false
+
+- name: Delete firewall rules
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute firewall-rules delete {{ item }}
+      --project={{ gcp_project_id }}
+      --quiet
+  loop: "{{ r_gcp_firewall_list.stdout_lines | default([]) }}"
+  when: r_gcp_firewall_list.stdout_lines | default([]) | length > 0
+  failed_when: false
+
+- name: Delete Cloud NAT
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute routers nats delete {{ gcp_destroy_nat_name }}
+      --router={{ gcp_destroy_router_name }}
+      --region={{ gcp_region }}
+      --project={{ gcp_project_id }}
+      --quiet
+  failed_when: false
+  changed_when: true
+
+- name: Delete Cloud Router
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute routers delete {{ gcp_destroy_router_name }}
+      --region={{ gcp_region }}
+      --project={{ gcp_project_id }}
+      --quiet
+  failed_when: false
+  changed_when: true
+
+- name: Delete subnet
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute networks subnets delete {{ gcp_destroy_subnet_name }}
+      --region={{ gcp_region }}
+      --project={{ gcp_project_id }}
+      --quiet
+  failed_when: false
+  changed_when: true
+
+- name: Delete VPC network
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute networks delete {{ gcp_destroy_network_name }}
+      --project={{ gcp_project_id }}
+      --quiet
+  failed_when: false
+  changed_when: true

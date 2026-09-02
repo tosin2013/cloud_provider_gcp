@@ -1,0 +1,14 @@
+---
+- name: Delete DNS A records for instances
+  ansible.builtin.command:
+    cmd: >-
+      gcloud dns record-sets delete
+      {{ item.name }}.{{ guid }}.{{ base_domain }}.
+      --zone={{ gcp_dns_zone_name }}
+      --type=A
+      --project={{ gcp_project_id }}
+  loop: "{{ gcp_dns_records | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}.{{ guid }}.{{ base_domain }}"
+  failed_when: false
+  changed_when: true

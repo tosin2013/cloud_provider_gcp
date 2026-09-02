@@ -1,0 +1,8 @@
+---
+galaxy_info:
+  role_name: user_info
+  description: Report GCP access information via agnosticd_user_info
+  author: tosin2013
+  license: Apache-2.0
+  min_ansible_version: "2.15"
+dependencies: []

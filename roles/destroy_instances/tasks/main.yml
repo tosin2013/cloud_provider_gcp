@@ -1,0 +1,37 @@
+---
+- name: Fetch GCE instances for this GUID
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute instances list
+      --project={{ gcp_project_id }}
+      --filter="labels.guid={{ guid }}"
+      --format="value(name,zone)"
+  register: r_gcp_destroy_list
+  changed_when: false
+
+- name: Delete GCE instances
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute instances delete {{ item.split('\t')[0] }}
+      --zone={{ item.split('\t')[1] | regex_replace('.*/zones/', '') }}
+      --project={{ gcp_project_id }}
+      --quiet
+  loop: "{{ r_gcp_destroy_list.stdout_lines }}"
+  loop_control:
+    label: "{{ item.split('\t')[0] }}"
+  when: r_gcp_destroy_list.stdout_lines | length > 0
+  async: "{{ gcp_destroy_async_timeout }}"
+  poll: 0
+  register: r_gcp_destroy_instances
+
+- name: Wait for instance deletion
+  ansible.builtin.async_status:
+    jid: "{{ item.ansible_job_id }}"
+  loop: "{{ r_gcp_destroy_instances.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item.split('\t')[0] | default('none') }}"
+  register: r_gcp_destroy_wait
+  until: r_gcp_destroy_wait.finished
+  retries: 60
+  delay: 10
+  when: r_gcp_destroy_instances.results is defined

@@ -1,0 +1,50 @@
+---
+- name: Create GCE instances
+  google.cloud.gcp_compute_instance:
+    name: "{{ item.name }}"
+    machine_type: "{{ item.instance_type | default(gcp_default_machine_type) }}"
+    zone: "{{ item.zone | default(gcp_region ~ '-b') }}"
+    project: "{{ gcp_project_id }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+    network_interfaces:
+      - network: "{{ gcp_network }}"
+        subnetwork: "{{ gcp_subnet }}"
+        access_configs: "{{ (item.public_ip | default(true)) | ternary([{'name': 'External NAT', 'type': 'ONE_TO_ONE_NAT'}], omit) }}"
+    disks:
+      - auto_delete: true
+        boot: true
+        initialize_params:
+          source_image: "projects/{{ item.image_project | default(gcp_default_image_project) }}/global/images/family/{{ item.image_family | default(gcp_default_image_family) }}"
+          disk_size_gb: "{{ item.rootfs_size | default(gcp_default_disk_size_gb) }}"
+          disk_type: "{{ item.disk_type | default(gcp_default_disk_type) }}"
+    tags:
+      items: "{{ item.tags | default([project_tag]) }}"
+    labels:
+      guid: "{{ guid }}"
+      project: "{{ project_tag }}"
+      ansible_group: "{{ item.ansible_group | default(item.name) }}"
+    metadata:
+      enable-oslogin: "FALSE"
+    state: present
+  loop: "{{ instances }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: r_gcp_instances
+  async: 600
+  poll: 0
+
+- name: Wait for GCE instance creation
+  ansible.builtin.async_status:
+    jid: "{{ item.ansible_job_id }}"
+  loop: "{{ r_gcp_instances.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  register: r_gcp_instances_wait
+  until: r_gcp_instances_wait.finished
+  retries: 60
+  delay: 10
+
+- name: Set instances fact
+  ansible.builtin.set_fact:
+    gcp_created_instances: "{{ r_gcp_instances_wait.results | map(attribute='instance') | list }}"

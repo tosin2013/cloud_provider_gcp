@@ -1,0 +1,8 @@
+---
+- name: Run provision DNS tasks
+  when: ACTION == "provision"
+  ansible.builtin.include_tasks: provision.yml
+
+- name: Run destroy DNS tasks
+  when: ACTION == "destroy"
+  ansible.builtin.include_tasks: destroy.yml

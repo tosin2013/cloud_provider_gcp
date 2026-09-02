@@ -1,0 +1,9 @@
+---
+- name: Remove project-wide SSH metadata
+  ansible.builtin.command:
+    cmd: >-
+      gcloud compute project-info remove-metadata
+      --project={{ gcp_project_id }}
+      --keys=ssh-keys
+  changed_when: true
+  failed_when: false
