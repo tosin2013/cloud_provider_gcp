@@ -17,6 +17,18 @@
   ansible.builtin.set_fact:
     gcp_credentials_output: "{{ output_dir }}/gcp_credentials.json"
 
+- name: Check if gcloud is available
+  ansible.builtin.command:
+    cmd: command -v gcloud
+  register: r_gcloud_check
+  failed_when: false
+  changed_when: false
+  check_mode: false
+
+- name: Set gcloud availability fact
+  ansible.builtin.set_fact:
+    _gcloud_available: "{{ r_gcloud_check.rc == 0 }}"
+
 - name: Activate service account with gcloud
   ansible.builtin.command:
     cmd: >-
@@ -24,4 +36,14 @@
       --key-file={{ gcp_credentials_output }}
       --project={{ gcp_project_id }}
   changed_when: true
-  when: gcp_auth_type == "serviceaccount"
+  when:
+    - gcp_auth_type == "serviceaccount"
+    - _gcloud_available | bool
+
+- name: Note gcloud not available
+  when: not (_gcloud_available | bool)
+  ansible.builtin.debug:
+    msg: >-
+      gcloud CLI is not available in this execution environment.
+      GCP API calls will use service_account_file authentication
+      via google.cloud Ansible modules.

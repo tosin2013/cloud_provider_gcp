@@ -7,27 +7,13 @@
   changed_when: false
   check_mode: false
 
-- name: Install Google Cloud SDK
-  when: r_gcloud_check.rc != 0
-  block:
-    - name: Add Google Cloud SDK repo (RHEL/CentOS)
-      ansible.builtin.yum_repository:
-        name: google-cloud-cli
-        description: Google Cloud CLI
-        baseurl: https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64
-        gpgcheck: true
-        gpgkey: https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-        enabled: true
-      when: ansible_os_family == "RedHat"
+- name: Set gcloud availability
+  ansible.builtin.set_fact:
+    _gcloud_available: "{{ r_gcloud_check.rc == 0 }}"
 
-    - name: Install gcloud CLI package (RHEL/CentOS)
-      ansible.builtin.dnf:
-        name: google-cloud-cli
-        state: present
-      when: ansible_os_family == "RedHat"
-
-- name: Verify gcloud is available
-  ansible.builtin.command:
-    cmd: gcloud version
-  changed_when: false
-  check_mode: false
+- name: Note gcloud status
+  ansible.builtin.debug:
+    msg: >-
+      {{ 'gcloud CLI is available.' if _gcloud_available | bool
+         else 'gcloud CLI is not available. This is expected inside an EE container.
+               Roles will use google.cloud Ansible collection modules instead.' }}
