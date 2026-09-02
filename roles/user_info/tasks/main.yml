@@ -1,6 +1,6 @@
 ---
 - name: Report GCP project information
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     msg: "{{ item }}"
   loop:
     - "GCP Project ID: {{ gcp_project_id }}"
@@ -8,7 +8,7 @@
     - "GCP Console: https://console.cloud.google.com/home/dashboard?project={{ gcp_project_id }}"
 
 - name: Report GCP project data
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     data:
       gcp_project_id: "{{ gcp_project_id }}"
       gcp_region: "{{ gcp_region }}"
@@ -16,6 +16,6 @@
 
 - name: Report additional messages
   when: gcp_user_info_messages | length > 0
-  agnosticd_user_info:
+  agnosticd.core.agnosticd_user_info:
     msg: "{{ item }}"
   loop: "{{ gcp_user_info_messages }}"
