@@ -35,5 +35,5 @@
 
 - name: Set instances fact
   ansible.builtin.set_fact:
-    gcp_created_instances: "{{ r_gcp_instances.results | map(attribute='instance') | list }}"
+    gcp_created_instances: "{{ r_gcp_instances.results }}"
   when: r_gcp_instances.results | default([]) | length > 0
