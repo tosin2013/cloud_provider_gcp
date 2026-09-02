@@ -17,24 +17,9 @@
   changed_when: true
   when: _gcloud_available | default(false) | bool
 
-- name: Set project-wide SSH metadata via google.cloud module
+- name: Note SSH key stored as fact for install-config.yaml
   when: not (_gcloud_available | default(false) | bool)
-  google.cloud.gcp_compute_project_info:
-    project: "{{ gcp_project_id }}"
-    auth_kind: serviceaccount
-    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
-    metadata:
-      items:
-        - key: ssh-keys
-          value: "{{ gcp_ssh_key_user }}:{{ gcp_ssh_public_key }}"
-  failed_when: false
-  register: r_gcp_ssh_metadata
-
-- name: Fall back to noting SSH key for install-config
-  when:
-    - not (_gcloud_available | default(false) | bool)
-    - r_gcp_ssh_metadata is failed
   ansible.builtin.debug:
     msg: >-
-      Could not set project-wide SSH metadata.
-      SSH key will be injected via install-config.yaml for OpenShift deployments.
+      gcloud not available. SSH public key stored as gcp_ssh_public_key fact.
+      It will be injected into install-config.yaml by the OpenShift installer role.

@@ -9,12 +9,9 @@
   failed_when: false
   when: _gcloud_available | default(false) | bool
 
-- name: Remove project-wide SSH metadata via module
+- name: Note SSH metadata cleanup skipped
   when: not (_gcloud_available | default(false) | bool)
-  google.cloud.gcp_compute_project_info:
-    project: "{{ gcp_project_id }}"
-    auth_kind: serviceaccount
-    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
-    metadata:
-      items: []
-  failed_when: false
+  ansible.builtin.debug:
+    msg: >-
+      gcloud not available. Project-wide SSH metadata cleanup skipped.
+      OpenShift installer manages its own SSH configuration.
