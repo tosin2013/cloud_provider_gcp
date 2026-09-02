@@ -1,22 +1,22 @@
 ---
 - name: Try to detect region from existing instances
-  ansible.builtin.command:
-    cmd: >-
-      gcloud compute instances list
-      --project={{ gcp_project_id }}
-      --filter="labels.guid={{ guid }}"
-      --format="value(zone)"
-      --limit=1
-  register: r_detect_zone
-  changed_when: false
+  google.cloud.gcp_compute_instance_info:
+    zone: "{{ gcp_region | default(gcp_detect_region_fallback) }}-b"
+    filters:
+      - "labels.guid = {{ guid }}"
+    project: "{{ gcp_project_id }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+  register: r_detect_instances
   failed_when: false
 
 - name: Set region from detected zone
   ansible.builtin.set_fact:
-    gcp_region_final: "{{ r_detect_zone.stdout | trim | regex_replace('(.*)-[a-z]$', '\\1') }}"
+    gcp_region_final: >-
+      {{ r_detect_instances.resources[0].zone
+         | regex_replace('.*/zones/(.*)-[a-z]$', '\1') }}
   when:
-    - r_detect_zone.rc == 0
-    - r_detect_zone.stdout | trim | length > 0
+    - r_detect_instances.resources | default([]) | length > 0
 
 - name: Fall back to configured region
   ansible.builtin.set_fact:

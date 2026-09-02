@@ -1,19 +1,18 @@
 ---
 - name: Create DNS A records for instances
-  ansible.builtin.command:
-    cmd: >-
-      gcloud dns record-sets create
-      {{ item.name }}.{{ guid }}.{{ base_domain }}.
-      --zone={{ gcp_dns_zone_name }}
-      --type=A
-      --ttl={{ gcp_dns_ttl }}
-      --rrdatas={{ item.public_ip }}
-      --project={{ gcp_project_id }}
+  google.cloud.gcp_dns_resource_record_set:
+    name: "{{ item.name }}.{{ guid }}.{{ base_domain }}."
+    managed_zone:
+      name: "{{ gcp_dns_zone_name }}"
+    type: A
+    ttl: "{{ gcp_dns_ttl }}"
+    target:
+      - "{{ item.public_ip }}"
+    project: "{{ gcp_project_id }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+    state: present
   loop: "{{ gcp_dns_records | default([]) }}"
   loop_control:
     label: "{{ item.name }}.{{ guid }}.{{ base_domain }}"
-  register: r_dns_create
-  changed_when: r_dns_create.rc == 0
-  failed_when:
-    - r_dns_create.rc != 0
-    - "'already exists' not in r_dns_create.stderr"
+  failed_when: false

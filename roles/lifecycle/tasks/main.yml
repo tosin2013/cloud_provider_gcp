@@ -1,49 +1,49 @@
 ---
 - name: Fetch instances for this GUID
-  ansible.builtin.command:
-    cmd: >-
-      gcloud compute instances list
-      --project={{ gcp_project_id }}
-      --filter="labels.guid={{ guid }}"
-      --format="value(name,zone,status)"
+  google.cloud.gcp_compute_instance_info:
+    zone: "{{ gcp_region }}-b"
+    filters:
+      - "labels.guid = {{ guid }}"
+    project: "{{ gcp_project_id }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
   register: r_lifecycle_list
-  changed_when: false
+  failed_when: false
 
 - name: Parse instance list
   ansible.builtin.set_fact:
-    _lifecycle_instances: >-
-      {{ r_lifecycle_list.stdout_lines | default([])
-         | map('split', '\t')
-         | list }}
+    _lifecycle_instances: "{{ r_lifecycle_list.resources | default([]) }}"
 
 - name: Report status
   when: gcp_lifecycle_action == "status"
   ansible.builtin.debug:
-    msg: "Instance {{ item[0] }} in {{ item[1] }}: {{ item[2] }}"
+    msg: "Instance {{ item.name }} in {{ item.zone | regex_replace('.*/zones/', '') }}: {{ item.status }}"
   loop: "{{ _lifecycle_instances }}"
   loop_control:
-    label: "{{ item[0] }}"
+    label: "{{ item.name }}"
 
 - name: Stop instances
   when: gcp_lifecycle_action == "stop"
-  ansible.builtin.command:
-    cmd: >-
-      gcloud compute instances stop {{ item[0] }}
-      --zone={{ item[1] | regex_replace('.*/zones/', '') }}
-      --project={{ gcp_project_id }}
+  google.cloud.gcp_compute_instance:
+    name: "{{ item.name }}"
+    zone: "{{ item.zone | regex_replace('.*/zones/', '') }}"
+    project: "{{ gcp_project_id }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+    status: TERMINATED
   loop: "{{ _lifecycle_instances }}"
   loop_control:
-    label: "{{ item[0] }}"
-  changed_when: true
+    label: "{{ item.name }}"
 
 - name: Start instances
   when: gcp_lifecycle_action == "start"
-  ansible.builtin.command:
-    cmd: >-
-      gcloud compute instances start {{ item[0] }}
-      --zone={{ item[1] | regex_replace('.*/zones/', '') }}
-      --project={{ gcp_project_id }}
+  google.cloud.gcp_compute_instance:
+    name: "{{ item.name }}"
+    zone: "{{ item.zone | regex_replace('.*/zones/', '') }}"
+    project: "{{ gcp_project_id }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+    status: RUNNING
   loop: "{{ _lifecycle_instances }}"
   loop_control:
-    label: "{{ item[0] }}"
-  changed_when: true
+    label: "{{ item.name }}"

@@ -1,17 +1,51 @@
 ---
-- name: Fetch GCE instances for this GUID
-  ansible.builtin.command:
-    cmd: >-
-      gcloud compute instances list
-      --project={{ gcp_project_id }}
-      --filter="labels.guid={{ guid }}"
-      --format=json
-  register: r_gcp_instance_list
-  changed_when: false
+- name: Fetch GCE instances for this GUID via google.cloud
+  google.cloud.gcp_compute_instance_info:
+    zone: "{{ gcp_region }}-b"
+    filters:
+      - "labels.guid = {{ guid }}"
+    project: "{{ gcp_project_id }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+  register: r_gcp_instance_info
+  failed_when: false
+
+- name: Try additional zones if first zone returned nothing
+  when: (r_gcp_instance_info.resources | default([])) | length == 0
+  block:
+    - name: Fetch from zone a
+      google.cloud.gcp_compute_instance_info:
+        zone: "{{ gcp_region }}-a"
+        filters:
+          - "labels.guid = {{ guid }}"
+        project: "{{ gcp_project_id }}"
+        auth_kind: serviceaccount
+        service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+      register: r_gcp_instance_info_a
+      failed_when: false
+
+    - name: Fetch from zone c
+      google.cloud.gcp_compute_instance_info:
+        zone: "{{ gcp_region }}-c"
+        filters:
+          - "labels.guid = {{ guid }}"
+        project: "{{ gcp_project_id }}"
+        auth_kind: serviceaccount
+        service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+      register: r_gcp_instance_info_c
+      failed_when: false
+
+    - name: Merge instance lists from all zones
+      ansible.builtin.set_fact:
+        r_gcp_instance_info:
+          resources: >-
+            {{ (r_gcp_instance_info.resources | default([]))
+               + (r_gcp_instance_info_a.resources | default([]))
+               + (r_gcp_instance_info_c.resources | default([])) }}
 
 - name: Parse instance list
   ansible.builtin.set_fact:
-    _gcp_instances: "{{ r_gcp_instance_list.stdout | from_json }}"
+    _gcp_instances: "{{ r_gcp_instance_info.resources | default([]) }}"
 
 - name: Add hosts to inventory
   ansible.builtin.add_host:
@@ -21,7 +55,8 @@
       {{ gcp_inventory_use_private_ip | bool
          | ternary(
              item.networkInterfaces[0].networkIP,
-             item.networkInterfaces[0].accessConfigs[0].natIP | default(item.networkInterfaces[0].networkIP)
+             (item.networkInterfaces[0].accessConfigs[0].natIP
+              | default(item.networkInterfaces[0].networkIP))
            ) }}
     public_dns_name: "{{ item.networkInterfaces[0].accessConfigs[0].natIP | default('') }}"
     private_ip_address: "{{ item.networkInterfaces[0].networkIP }}"

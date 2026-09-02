@@ -32,21 +32,6 @@
     state: present
   register: r_gcp_router
 
-- name: Create Cloud NAT via gcloud
-  ansible.builtin.command:
-    cmd: >-
-      gcloud compute routers nats create {{ gcp_nat_name }}
-      --router={{ gcp_router_name }}
-      --region={{ gcp_region }}
-      --auto-allocate-nat-external-ips
-      --nat-all-subnet-ip-ranges
-      --project={{ gcp_project_id }}
-  register: r_gcp_nat
-  changed_when: r_gcp_nat.rc == 0
-  failed_when:
-    - r_gcp_nat.rc != 0
-    - "'already exists' not in r_gcp_nat.stderr"
-
 - name: Create firewall rules
   google.cloud.gcp_compute_firewall:
     name: "{{ item.name }}"

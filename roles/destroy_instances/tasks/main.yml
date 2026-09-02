@@ -1,37 +1,24 @@
 ---
 - name: Fetch GCE instances for this GUID
-  ansible.builtin.command:
-    cmd: >-
-      gcloud compute instances list
-      --project={{ gcp_project_id }}
-      --filter="labels.guid={{ guid }}"
-      --format="value(name,zone)"
+  google.cloud.gcp_compute_instance_info:
+    zone: "{{ gcp_region }}-b"
+    filters:
+      - "labels.guid = {{ guid }}"
+    project: "{{ gcp_project_id }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
   register: r_gcp_destroy_list
-  changed_when: false
+  failed_when: false
 
 - name: Delete GCE instances
-  ansible.builtin.command:
-    cmd: >-
-      gcloud compute instances delete {{ item.split('\t')[0] }}
-      --zone={{ item.split('\t')[1] | regex_replace('.*/zones/', '') }}
-      --project={{ gcp_project_id }}
-      --quiet
-  loop: "{{ r_gcp_destroy_list.stdout_lines }}"
+  google.cloud.gcp_compute_instance:
+    name: "{{ item.name }}"
+    zone: "{{ item.zone | regex_replace('.*/zones/', '') }}"
+    project: "{{ gcp_project_id }}"
+    auth_kind: serviceaccount
+    service_account_file: "{{ gcp_credentials_output | default(gcp_credentials_file) }}"
+    state: absent
+  loop: "{{ r_gcp_destroy_list.resources | default([]) }}"
   loop_control:
-    label: "{{ item.split('\t')[0] }}"
-  when: r_gcp_destroy_list.stdout_lines | length > 0
-  async: "{{ gcp_destroy_async_timeout }}"
-  poll: 0
-  register: r_gcp_destroy_instances
-
-- name: Wait for instance deletion
-  ansible.builtin.async_status:
-    jid: "{{ item.ansible_job_id }}"
-  loop: "{{ r_gcp_destroy_instances.results | default([]) }}"
-  loop_control:
-    label: "{{ item.item.split('\t')[0] | default('none') }}"
-  register: r_gcp_destroy_wait
-  until: r_gcp_destroy_wait.finished
-  retries: 60
-  delay: 10
-  when: r_gcp_destroy_instances.results is defined
+    label: "{{ item.name }}"
+  when: r_gcp_destroy_list.resources | default([]) | length > 0
