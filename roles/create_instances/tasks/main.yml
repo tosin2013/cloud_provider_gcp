@@ -1,4 +1,16 @@
 ---
+- name: Read SSH provision public key for instance metadata
+  when: gcp_ssh_public_key is not defined or gcp_ssh_public_key | length == 0
+  block:
+    - name: Slurp SSH public key file
+      ansible.builtin.slurp:
+        src: "{{ ssh_provision_pubkey_path | default(output_dir ~ '/ssh_provision_' ~ guid ~ '.pub') }}"
+      register: r_inst_ssh_pubkey
+
+    - name: Set gcp_ssh_public_key from file
+      ansible.builtin.set_fact:
+        gcp_ssh_public_key: "{{ r_inst_ssh_pubkey.content | b64decode | trim }}"
+
 - name: Create GCE instances
   google.cloud.gcp_compute_instance:
     name: "{{ item.name }}"
