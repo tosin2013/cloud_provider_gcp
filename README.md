@@ -1,7 +1,8 @@
 # Cloud Provider Collection for GCP — AgnosticD V2
 
 Ansible collection providing GCP infrastructure provisioning roles for
-[AgnosticD V2](https://github.com/rhpds/agnosticd-v2).
+[AgnosticD V2](https://github.com/tosin2013/agnosticd-v2) (fork of
+[rhpds/agnosticd-v2](https://github.com/rhpds/agnosticd-v2), pending upstream approval).
 
 Follows the same architecture as
 [cloud_provider_aws](https://github.com/rhpds/cloud_provider_aws):
