@@ -27,7 +27,7 @@
       - auto_delete: true
         boot: true
         initialize_params:
-          source_image: "projects/{{ item.image_project | default(gcp_default_image_project) }}/global/images/family/{{ item.image_family | default(gcp_default_image_family) }}"
+          source_image: "{{ gcp_instance_source_image }}"
           disk_size_gb: "{{ item.rootfs_size | default(gcp_default_disk_size_gb) }}"
           disk_type: "{{ item.disk_type | default(gcp_default_disk_type) }}"
     tags:
@@ -40,6 +40,10 @@
       enable-oslogin: "FALSE"
       ssh-keys: "{{ gcp_ssh_key_user | default('gcp-user') }}:{{ gcp_ssh_public_key | default('') }}"
     state: present
+  vars:
+    gcp_instance_image_project: "{{ item.image_project | default(gcp_default_image_project) }}"
+    gcp_instance_image_family: "{{ item.image_family | default(gcp_default_image_family) }}"
+    gcp_instance_source_image: "projects/{{ gcp_instance_image_project }}/global/images/family/{{ gcp_instance_image_family }}"
   loop: "{{ instances }}"
   loop_control:
     label: "{{ item.name }}"

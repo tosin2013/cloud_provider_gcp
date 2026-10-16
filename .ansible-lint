@@ -1,0 +1,15 @@
+---
+profile: production
+
+exclude_paths:
+- tests/
+
+skip_list:
+- var-naming[no-role-prefix]
+- var-naming[pattern]
+- galaxy[no-changelog]
+- role-name
+- ignore-errors
+
+mock_modules:
+- agnosticd.core.agnosticd_user_info
